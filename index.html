@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MEA in Artificial Intelligence</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #09090b;
+            --surface: #18181b;
+            --surface-glass: rgba(24, 24, 27, 0.85);
+            --border: #27272a;
+            --primary: #0ea5e9;
+            --primary-glow: rgba(14, 165, 233, 0.4);
+            --secondary: #8b5cf6;
+            --success: #10b981;
+            --danger: #ef4444; /* Matches the red text in slides */
+            --text-main: #f4f4f5;
+            --text-muted: #a1a1aa;
+            --font-sans: 'Inter', sans-serif;
+            --font-pixel: 'Press Start 2P', cursive;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-sans); background-color: var(--bg);
+            color: var(--text-main); line-height: 1.6; overflow-x: hidden; scroll-behavior: smooth;
+        }
+
+        .ambient-glow {
+            position: fixed; top: 10%; left: 50%; width: 80vw; height: 80vw;
+            background: radial-gradient(circle, var(--primary-glow) 0%, transparent 50%);
+            transform: translate(-50%, -50%); z-index: -1; filter: blur(120px); opacity: 0.3; pointer-events: none;
+        }
+
+        /* Global UI */
+        header {
+            position: sticky; top: 0; left: 0; right: 0; background: var(--surface-glass);
+            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border); z-index: 100; padding: 0.75rem 0;
+        }
+        .header-content {
+            display: flex; justify-content: space-between; align-items: center; max-width: 1000px; margin: 0 auto; padding: 0 2rem;
+        }
+        .header-title { font-weight: 800; font-size: 1.25rem; color: var(--text-main); letter-spacing: -0.02em; }
+        .header-title span { color: var(--primary); }
+        .progress-labels-full { width: 100%; display: flex; justify-content: space-between; font-size: 0.65rem; color: var(--text-muted); font-family: var(--font-pixel); text-transform: uppercase; padding: 0 1rem; position: absolute; bottom: 8px; }
+        .progress-track-full { width: 100%; height: 4px; background: var(--border); position: relative; }
+        #scroll-chase-group { position: absolute; top: -42px; left: 0; display: flex; gap: 10px; align-items: flex-end; transition: left 0.1s ease-out; z-index: 2; }
+
+        .container { max-width: 1000px; margin: 0 auto; padding: 0 2rem; }
+        section { padding: 4.5rem 0; border-bottom: 1px dashed var(--border); }
+        h1, h2, h3 { font-weight: 800; letter-spacing: -0.03em; margin-bottom: 1rem; }
+        h1 { font-size: 3rem; background: linear-gradient(135deg, #fff, var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h2 { font-size: 2.25rem; color: var(--primary); }
+        .pixel-text { font-family: var(--font-pixel); text-transform: uppercase; letter-spacing: 1px; }
+        p { color: var(--text-muted); font-size: 1.15rem; margin-bottom: 1.5rem; }
+        strong { color: var(--text-main); font-weight: 600; }
+        
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 2.5rem; margin-bottom: 2rem; }
+        
+        /* Section 1 Theory */
+        .sub-section-title { font-size: 1.35rem; color: var(--text-main); margin: 2.5rem 0 1rem; padding-bottom: 0.5rem; display: inline-block; }
+        .theory-list { margin-left: 2.5rem; margin-bottom: 1rem; }
+        .theory-list li { margin-bottom: 0.75rem; font-size: 1.1rem; color: var(--text-muted); }
+        .highlight-red { color: var(--danger); font-weight: bold; }
+        .alg-list { background: rgba(0,0,0,0.4); border-radius: 8px; border: 1px solid var(--border); padding: 2rem; margin-top: 1rem; list-style-type: decimal; padding-left: 3rem;}
+        .alg-list li { margin-bottom: 0.85rem; color: var(--text-main); font-size: 1.1rem; }
+
+        .algo-code { background: #000; border: 1px solid #333; padding: 2rem; border-radius: 8px; font-family: monospace; font-size: 1.05rem; line-height: 1.8; color: var(--text-main); }
+        .algo-code ul { list-style-type: lower-alpha; margin-left: 2rem; margin-top: 0.5rem; margin-bottom: 1rem; }
+        .algo-code ul ul { list-style-type: lower-roman; margin-left: 2rem; margin-top: 0.5rem; }
+
+        /* Section 2 Static Visuals */
+        .slide-box { width: 75px; height: 75px; background-color: #e2e8f0; box-shadow: 2px 2px 10px rgba(0,0,0,0.5); position: relative; display: flex; justify-content: center; align-items: center; border: 1px solid #94a3b8; }
+        .ex-circle { width: 45px; height: 45px; background-color: #ffffff; border: 2px solid #94a3b8; border-radius: 50%; display: flex; justify-content: center; align-items: center; }
+        .ex-diamond { width: 18px; height: 18px; background-color: #bbf7d0; border: 2px solid #22c55e; transform: rotate(45deg); transition: all 0.5s; }
+        .ex-diamond.moved { position: absolute; top: 12px; right: 5px; }
+        .ex-diamond.expanded { width: 26px; height: 26px; top: 10px; right: 0px; }
+        .ex-dot { width: 8px; height: 8px; background-color: #1e293b; border-radius: 50%; position: absolute; top: 8px; right: 25px; transition: opacity 0.3s; }
+        
+        .step-flowchart { display: flex; flex-direction: column; gap: 2.5rem; margin-top: 2rem; }
+        .flow-step-combo { display: flex; flex-direction: column; align-items: flex-start; }
+        .step-label { color: var(--danger); font-weight: 800; margin-bottom: 0.75rem; display: block; font-size: 1.1rem; }
+        .state-label { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; margin-top: 0.5rem; text-align: center; }
+        
+        .arrow-container { position: relative; display: flex; justify-content: center; align-items: center; width: 60px; font-size: 1.5rem; color: var(--text-muted); }
+        .arrow-text { font-size: 0.7rem; color: var(--text-main); position: absolute; top: -15px; left: 50%; transform: translateX(-50%); font-weight: 600; }
+
+        /* Section 3 Interactive */
+        .shapes-bot { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; background: #000; border: 1px solid var(--border); border-radius: 12px; padding: 4rem; align-items: start; }
+        .controls { display: flex; flex-direction: column; gap: 1rem; }
+        .pixel-btn { background: var(--surface); color: var(--text-main); border: 2px solid var(--border); padding: 1.2rem; border-radius: 8px; font-family: var(--font-pixel); font-size: 0.65rem; cursor: pointer; transition: all 0.2s; text-align: left; }
+        .pixel-btn:not([disabled]):hover { background: var(--border); border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
+        .pixel-btn[disabled] { opacity: 0.5; filter: grayscale(1); cursor: not-allowed; }
+        .log-panel { margin-top: 1rem; background: rgba(24,24,27,0.8); padding: 1.5rem; border-radius: 8px; font-family: monospace; font-size: 0.95rem; color: var(--success); border-left: 4px solid var(--primary); min-height: 120px; line-height: 1.6; }
+
+        /* Section 4 Naruto */
+        .naruto-arena { height: 450px; background: radial-gradient(circle at center, #18181b 0%, #000 100%); border: 1px solid var(--border); border-radius: 12px; display: flex; justify-content: center; align-items: center; position: relative; margin-top: 2rem; cursor: pointer; overflow: hidden; }
+        .naruto-char { width: 150px; height: 150px; border-radius: 50%; background: var(--surface); border: 4px solid #f59e0b; position: relative; z-index: 10; transition: all 0.4s; user-select: none; box-shadow: 0 0 30px rgba(245, 158, 11, 0.2); object-fit: cover; object-position: top; }
+        .naruto-clone { width: 120px; height: 120px; border-radius: 50%; background: var(--bg); border: 2px dashed #f59e0b; position: absolute; z-index: 1; opacity: 0; transition: all 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275); top: 50%; left: 50%; transform: translate(-50%, -50%); object-fit: cover; object-position: top; filter: brightness(1.2) sepia(0.3) hue-rotate(30deg); }
+        .naruto-arena.active .naruto-char { box-shadow: 0 0 60px #f59e0b; filter: brightness(1.2); }
+        .naruto-arena.active .c1 { transform: translate(calc(-50% - 160px), calc(-50% + 110px)); opacity: 0.9; }
+        .naruto-arena.active .c2 { transform: translate(calc(-50% + 160px), calc(-50% + 110px)); opacity: 0.9; }
+        .naruto-arena.active .c3 { transform: translate(-50%, calc(-50% - 160px)); opacity: 0.9; }
+        .clone-hint { position: absolute; top: 20px; left: 20px; font-size: 0.65rem; color: var(--text-muted); animation: pulse 2s infinite; }
+        
+        /* Section 5 PYQs */
+        .pyq-list { display: flex; flex-direction: column; gap: 2.5rem; margin-top: 3rem; }
+        .pyq-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; }
+        .pyq-split { display: flex; gap: 2rem; align-items: flex-start; margin-bottom: 2rem; }
+        .pyq-left { flex: 1; }
+        .pyq-right { display: flex; justify-content: flex-end; width: 140px; }
+        .pyq-img-placeholder { width: 100%; height: 180px; background: rgba(0,0,0,0.4); border: 2px dashed var(--border); border-radius: 8px; display: flex; justify-content: center; align-items: center; color: var(--text-muted); font-size: 1rem; font-weight: 600; }
+        .pyq-year { font-size: 2.5rem; font-weight: 800; color: var(--danger); text-align: right; line-height: 1; margin: 0; padding: 0; text-shadow: 0 0 10px rgba(239, 68, 68, 0.3); }
+        .loading-wrap { display: none; margin-top: 1rem; align-items: center; gap: 15px; }
+        .answer-reveal { display: none; margin-top: 1.5rem; padding: 2rem; background: linear-gradient(90deg, rgba(16, 185, 129, 0.1), transparent); border-left: 4px solid var(--success); border-radius: 0 8px 8px 0; color: #d1fae5; animation: fadeIn 0.5s forwards; font-size: 1.05rem; }
+        .link-btn { display: inline-block; margin-top: 1.5rem; padding: 0.85rem 1.5rem; background: var(--border); color: var(--text-main); text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 0.9rem; transition: background 0.2s, color 0.2s; border: 1px solid transparent; text-align: center; }
+        .link-btn:hover { background: transparent; color: var(--primary); border: 1px solid var(--primary); }
+        
+        /* Showdown */
+        .showdown-panel { display: flex; gap: 2rem; align-items: center; background: linear-gradient(135deg, var(--surface), #000); padding: 4rem; border-radius: 16px; border: 1px solid var(--border); text-align: left; margin-bottom: 2rem; }
+        .showdown-panel > div { flex: 1; }
+        .vs { font-size: 3rem; font-weight: 800; color: var(--danger); font-style: italic; text-shadow: 0 0 20px rgba(239, 68, 68, 0.5); text-align: center; }
+
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+        @media (max-width: 800px) {
+            .shapes-bot, .pyq-split, .showdown-panel { flex-direction: column; }
+            .pyq-right { width: 100%; justify-content: flex-start; margin-top: 1rem; }
+            .pyq-year { text-align: left; font-size: 2rem; }
+            .vs { margin: 2rem 0; transform: rotate(90deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ambient-glow"></div>
+
+    <header style="padding-bottom: 0;">        
+        <!-- Full-Width Progress Track -->
+        <div style="width: 100%; height: 90px; position: relative; overflow: hidden; border-top: 1px solid rgba(255,255,255,0.05);">
+            <div class="progress-track-full" style="position: absolute; bottom: 20px; width: 100%;">
+                <!-- The Chase Group -->
+                <div id="scroll-chase-group" style="position: absolute; bottom: 4px; left: 0; display: flex; gap: 10px; align-items: flex-end; transition: left 0.1s ease-out; z-index: 2;">
+                    <img src="zenitsu.webp" alt="Zenitsu" style="height: 70px; transform: scaleX(-1);">
+                    <img src="nezuko.webp" alt="Nezuko" style="height: 70px; transform: scaleX(-1);">
+                </div>
+            </div>
+            <div class="progress-labels-full" style="position: absolute; bottom: 4px; width: 100%; display: flex; justify-content: space-between; font-size: 0.6rem; color: var(--text-muted); font-family: var(--font-pixel); padding: 0 1rem; box-sizing: border-box;">
+                <span>INITIAL STATE</span>
+                <span style="color:var(--success);">GOAL STATE</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Hero -->
+        <div style="padding: 6rem 0 2rem 0; text-align:center;">
+            <h1>Means-Ends Analysis (MEA)</h1>
+            <p>Advanced Artificial Intelligence Problem Solving Technique.</p>
+        </div>
+
+        <!-- ===============================================
+             1. Section 1: Theory & Algorithm 
+             =============================================== -->
+        <section id="theory">
+            <h2>1. The Theory & Algorithm</h2>
+            
+            <div class="card">
+                <h3 class="sub-section-title" style="margin-top:0;">What is Means-Ends Analysis?</h3>
+                <ul class="theory-list" style="list-style-type: '➤  '">
+                    <li><strong>Definition:</strong> Means-Ends Analysis is a problem-solving technique that focuses on <span class="highlight-red">reducing the difference between the current state and the goal state</span>.</li>
+                    <li>Instead of searching through all possible actions, MEA <span class="highlight-red">selects actions that appear to bring the agent closer to the goal</span>.
+                        <ul style="list-style-type: '➤  '; margin-left: 2rem; margin-top: 0.5rem;">
+                            <li><strong>Means:</strong> Available actions</li>
+                            <li><strong>Ends:</strong> Desired goal</li>
+                            <li><strong>Difference:</strong> Gap between current state and goal state</li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <h3 class="sub-section-title">Why Use Means-Ends Analysis?</h3>
+                <ul class="theory-list" style="list-style-type: '➤  '">
+                    <li>Helps <span class="highlight-red">reduce search space</span></li>
+                    <li>Useful when the problem space is too large for brute-force search</li>
+                    <li>Works well in <span class="highlight-red">heuristic-based planning</span></li>
+                </ul>
+                
+                <h3 class="sub-section-title">Means-Ends Analysis Strategy</h3>
+                <ul class="theory-list" style="list-style-type: '➤  '">
+                    <li>Search strategies either <strong>reason forward or backward</strong>.</li>
+                    <li>Mixed strategy - solve the <strong>major parts of problem first</strong> and solve the smaller problems that arise when combining them together.</li>
+                    <li>The means-ends analysis process centers around finding the difference between current state and goal state.</li>
+                </ul>
+
+                <h3 class="sub-section-title">Steps in Means-Ends Analysis</h3>
+                <ol class="alg-list">
+                    <li>Compare current state and goal state</li>
+                    <li>Identify differences</li>
+                    <li>Select an operator (action) to reduce the most significant difference</li>
+                    <li>If the operator has preconditions, apply MEA recursively to achieve those</li>
+                    <li>Apply the operator to transition to the new state</li>
+                    <li>Repeat until the goal is reached</li>
+                </ol>
+
+                <h3 class="sub-section-title">Algorithm Means-Ends Analysis</h3>
+                <div class="algo-code">
+                    <span style="color:var(--text-muted)">// Formal Algorithm Steps</span><br><br>
+                    <strong>Step 1:</strong> Compare CURRENT to GOAL, if there are no differences between both then return Success and Exit.<br><br>
+                    <strong>Step 2:</strong> Else, select the most significant difference and reduce it by doing the following steps until the success or failure occurs.
+                    <ul>
+                        <li>Select a new operator O which is applicable for the current difference, and if there is no such operator, then signal failure.</li>
+                        <li>Attempt to apply operator O to CURRENT. Make a description of two states.
+                            <ul>
+                                <li>i) <code>O-Start</code>, a state in which O's preconditions are satisfied.</li>
+                                <li>ii) <code>O-Result</code>, the state that would result if O were applied in O-start.</li>
+                            </ul>
+                        </li>
+                        <li>If <br>
+                            <span style="color:var(--success)"><code>(First-Part &lt;------ MEA (CURRENT, O-START))</code></span><br>
+                            And<br>
+                            <span style="color:var(--success)"><code>(LAST-Part &lt;------ MEA (O-Result, GOAL))</code></span><br>
+                            are successful, then signal Success and return the result of combining FIRST-PART, O, and LAST-PART.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===============================================
+             2. Section 2: MEA Static Visual Example 
+             =============================================== -->
+        <section id="static-example">
+            <h2 style="color: var(--secondary);">2. Means-Ends Analysis Example</h2>
+
+            <div class="card">
+                <ul class="theory-list" style="margin-left: 0; list-style: none;">
+                    <li style="color:var(--text-main); font-weight: 600; font-size: 1.3rem;">Apply MEA to get the goal state.</li>
+                </ul>
+
+                <!-- Static Init -> Goal Overview -->
+                <div style="display:flex; justify-content:center; align-items:center; gap:2rem; margin: 3rem 0;">
+                    <div style="text-align:center">
+                        <div class="slide-box">
+                            <div class="ex-circle"><div class="ex-diamond"></div></div>
+                            <div class="ex-dot"></div>
+                        </div>
+                        <div class="state-label">Initial State</div>
+                    </div>
+                    
+                    <div style="font-size:3rem; color:var(--text-muted)">&#x27F6;</div>
+                    
+                    <div style="text-align:center">
+                        <div class="slide-box">
+                            <div class="ex-circle"></div>
+                            <div class="ex-diamond expanded moved"></div>
+                        </div>
+                        <div class="state-label">Goal State</div>
+                    </div>
+                </div>
+
+                <ul class="theory-list" style="margin-left: 0; list-style: none;">
+                    <li style="color:var(--text-main); font-weight: 600; font-size: 1.3rem;">Solution:</li>
+                    <li>To solve the above problem, first find the differences between initial states and goal states, and for each difference, generate a new state and will apply the operators. The operators we have for this problem are:</li>
+                </ul>
+                <ul class="theory-list">
+                    <li><strong>Move</strong></li>
+                    <li><strong>Delete</strong></li>
+                    <li><strong>Expand</strong></li>
+                </ul>
+
+                <!-- Recreated Flowchart Diagram strictly matching "Photo 4 (Means-Ends Analysis Example)" -->
+                <div class="step-flowchart" style="margin-top: 4rem; padding-top: 3rem; border-top: 1px dashed var(--border)">
+                    
+                    <!-- Flow Row 1 -->
+                    <div class="flow-step-combo" style="align-items: center; justify-content:center; width: 100%;">
+                        <span class="step-label">Step 1: Evaluate Initial State</span>
+                        <div class="slide-box">
+                            <div class="ex-circle"><div class="ex-diamond"></div></div>
+                            <div class="ex-dot"></div>
+                        </div>
+                        <span class="state-label">Initial state</span>
+                    </div>
+
+                    <div style="display:flex; justify-content:space-around; align-items:flex-end; width:100%; margin-top:2rem; flex-wrap:wrap; gap: 2rem;">
+
+                        <!-- Flow Row 2 -->
+                        <div class="flow-step-combo">
+                            <span class="step-label">Step 2: Apply Delete Operator</span>
+                            <div style="display:flex; align-items:center;">
+                                <div class="slide-box">
+                                    <div class="ex-circle"><div class="ex-diamond"></div></div>
+                                    <div class="ex-dot"></div>
+                                </div>
+                                <div class="arrow-container">
+                                    <span class="arrow-text">Delete</span>
+                                    <span>&#x27F6;</span>
+                                </div>
+                                <div class="slide-box">
+                                    <div class="ex-circle"><div class="ex-diamond"></div></div>
+                                </div>
+                            </div>
+                            <span class="state-label" style="margin-left:1rem">Initial state</span>
+                        </div>
+
+                        <!-- Flow Row 3 -->
+                        <div class="flow-step-combo">
+                            <span class="step-label">Step 3: Apply Move Operator</span>
+                            <div style="display:flex; align-items:center;">
+                                <div class="slide-box">
+                                    <div class="ex-circle"><div class="ex-diamond"></div></div>
+                                </div>
+                                <div class="arrow-container">
+                                    <span class="arrow-text">Move</span>
+                                    <span>&#x27F6;</span>
+                                </div>
+                                <div class="slide-box">
+                                    <div class="ex-circle"></div>
+                                    <div class="ex-diamond moved"></div>
+                                </div>
+                            </div>
+                            <span class="state-label" style="opacity:0">Placeholder</span>
+                        </div>
+
+                        <!-- Flow Row 4 (Corrected from Step 1 in slide misprint) -->
+                        <div class="flow-step-combo">
+                            <span class="step-label">Step 4: Apply Expand Operator</span>
+                            <div style="display:flex; align-items:center;">
+                                <div class="slide-box">
+                                    <div class="ex-circle"></div>
+                                    <div class="ex-diamond moved"></div>
+                                </div>
+                                <div class="arrow-container">
+                                    <span class="arrow-text">Expand</span>
+                                    <span>&#x27F6;</span>
+                                </div>
+                                <div class="slide-box">
+                                    <div class="ex-circle"></div>
+                                    <div class="ex-diamond expanded moved"></div>
+                                </div>
+                            </div>
+                            <div style="display:flex; justify-content:flex-end; width:100%;">
+                                <span class="state-label" style="margin-right:0.5rem">Goal state</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ===============================================
+             3. Section 3: Interactive Visual Simulator 
+             =============================================== -->
+        <section id="interactive">
+            <h2>3. Interactive Simulator</h2>
+            <p>Execute the operators manually to transition through the states physically.</p>
+            
+            <div class="shapes-bot">
+                <!-- Visual Area -->
+                <div style="display: flex; justify-content: center; align-items: center; min-height: 250px;">
+                    <div class="slide-box" style="width: 160px; height: 160px; pointer-events: none;">
+                        <div id="sim-circle" class="ex-circle" style="width: 80px; height: 80px; border-width: 4px;">
+                            <div id="sim-diamond" class="ex-diamond" style="width: 32px; height: 32px; border-width: 3px;"></div>
+                        </div>
+                        <div id="sim-dot" class="ex-dot" style="width: 14px; height: 14px; top: 15px; right: 50px;"></div>
+                    </div>
+                </div>
+                
+                <!-- Controls and Log -->
+                <div style="display:flex; flex-direction:column; justify-content: flex-start; gap: 1rem;">
+                    <div class="controls">
+                        <button id="btn-delete" class="pixel-btn">1. Apply Delete</button>
+                        <button id="btn-move" class="pixel-btn" disabled>2. Apply Move</button>
+                        <button id="btn-expand" class="pixel-btn" disabled>3. Apply Expand</button>
+                    </div>
+                    <div id="action-log" class="log-panel">
+                        <span style="color:var(--text-muted)">// Simulator Action Log</span><br>
+                        > Ready.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===============================================
+             4. Section 4: Interactive Simulator: The Block World Problem
+             =============================================== -->
+        <section id="interactive-blocks">
+            <h2>4. Interactive Simulator: The Block World Problem</h2>
+            <p>A classic MEA problem. Goal: Stack 'A' on 'B', but Pre-conditions block the action.</p>
+            
+            <div style="display:flex; justify-content:center; gap:3rem; margin-bottom:2rem;">
+                <!-- Start State -->
+                <div style="text-align:center;">
+                    <div style="width:120px; height:80px; position:relative; border-bottom: 3px solid var(--border); margin:0 auto;">
+                        <div style="box-sizing:border-box; width:36px; height:36px; background:var(--bg-card); border:3px solid var(--primary); display:flex; justify-content:center; align-items:center; position:absolute; bottom:0; left:15px; color:var(--text); font-weight:bold;">A</div>
+                        <div style="box-sizing:border-box; width:36px; height:36px; background:var(--bg-card); border:3px solid var(--primary); display:flex; justify-content:center; align-items:center; position:absolute; bottom:0; right:15px; color:var(--text); font-weight:bold;">B</div>
+                    </div>
+                    <span class="state-label">Start State</span>
+                </div>
+                
+                <div style="display:flex; align-items:center; justify-content:center;">
+                    <span class="arrow-text" style="font-size:2rem; color:var(--text-muted);">&#x27F6;</span>
+                </div>
+
+                <!-- Goal State -->
+                <div style="text-align:center;">
+                    <div style="width:120px; height:80px; position:relative; border-bottom: 3px solid var(--success); margin:0 auto;">
+                        <div style="box-sizing:border-box; width:36px; height:36px; background:var(--bg-card); border:3px solid var(--success); display:flex; justify-content:center; align-items:center; position:absolute; bottom:36px; left:42px; color:var(--text); font-weight:bold;">A</div>
+                        <div style="box-sizing:border-box; width:36px; height:36px; background:var(--bg-card); border:3px solid var(--success); display:flex; justify-content:center; align-items:center; position:absolute; bottom:0; left:42px; color:var(--text); font-weight:bold;">B</div>
+                    </div>
+                    <span class="state-label" style="color:var(--success)">Goal State</span>
+                </div>
+            </div>
+
+            <div class="shapes-bot">
+                <!-- Visual Area -->
+                <div style="display: flex; justify-content: center; align-items: center; min-height: 250px; flex-direction: column;">
+                    <div style="position:relative; width:200px; height:120px; border-bottom: 4px solid var(--border); overflow:hidden;">
+                        <!-- Claw -->
+                        <div id="sim-claw" style="font-size:2.5rem; position:absolute; top:-20px; left:83px; transition: all 0.5s ease; z-index:10;">⚙️</div>
+                        <!-- Blocks -->
+                        <div id="sim-block-a" style="box-sizing:border-box; width:46px; height:46px; background:var(--bg); border:4px solid var(--primary); display:flex; justify-content:center; align-items:center; position:absolute; bottom:0; left:30px; color:var(--text); font-size:1.2rem; font-weight:bold; transition:all 0.6s ease; z-index:5;">A</div>
+                        <div id="sim-block-b" style="box-sizing:border-box; width:46px; height:46px; background:var(--bg); border:4px solid var(--secondary); display:flex; justify-content:center; align-items:center; position:absolute; bottom:0; right:30px; color:var(--text); font-size:1.2rem; font-weight:bold; transition:all 0.6s ease;">B</div>
+                    </div>
+                </div>
+                
+                <!-- Controls and Log -->
+                <div style="display:flex; flex-direction:column; justify-content: flex-start; gap: 1rem;">
+                    <div class="controls">
+                        <button id="btn-stack-1" class="pixel-btn">Apply Stack(A,B)</button>
+                        <button id="btn-pickup" class="pixel-btn" disabled style="display:none;">Apply Pickup(A)</button>
+                        <button id="btn-stack-2" class="pixel-btn" disabled style="display:none;">Apply Stack(A,B)</button>
+                    </div>
+                    <div id="log-blocks" class="log-panel">
+                        <span style="color:var(--text-muted)">// Simulator Action Log</span><br>
+                        > Initialize Environment...
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===============================================
+             5. Section 5: Interactive Simulator: The Laptop Purchase
+             =============================================== -->
+        <section id="interactive-laptop">
+            <h2>5. Interactive Simulator: The Laptop Purchase</h2>
+            <p>Using sub-goaling (finding the address via Phone) to satisfy the condition of knowing the shop's location before executing the Purchase operator.</p>
+
+            <div style="display:flex; justify-content:center; gap:3rem; margin-bottom:2rem;">
+                <div style="text-align:center;">
+                    <div style="font-size:3.5rem; line-height:1; display:flex; align-items:center; height:80px;">🏠👨‍💻</div>
+                    <span class="state-label">Initial State</span>
+                </div>
+                <div style="display:flex; align-items:center; justify-content:center;">
+                    <span class="arrow-text" style="font-size:2rem; color:var(--text-muted);">&#x27F6;</span>
+                </div>
+                <div style="text-align:center;">
+                    <div style="font-size:3.5rem; line-height:1; display:flex; align-items:center; height:80px;">💻✔️</div>
+                    <span class="state-label" style="color:var(--success)">Goal State</span>
+                </div>
+            </div>
+
+            <div class="shapes-bot">
+                <!-- Visual Area -->
+                <div style="display: flex; justify-content: center; align-items: center; min-height: 250px;">
+                    <div style="position:relative; width:100%; max-width:320px; height:100px; padding:2rem; background: var(--bg-card); border-radius:8px; border:1px solid var(--border); box-shadow: inset 0 0 10px rgba(0,0,0,0.5);">
+                        <div id="sim-user" style="position:absolute; left:20px; top:35px; font-size:3.5rem; transition: left 1s ease; z-index:10;">👨‍💻</div>
+                        <div id="sim-phone" style="position:absolute; left:120px; top:55px; font-size:2rem; opacity:0.5; transition: all 0.5s ease; filter: grayscale(1);">📱</div>
+                        <div id="sim-shop" style="position:absolute; right:20px; top:35px; font-size:3.5rem; z-index:5;">🏪</div>
+                        <div id="sim-laptop" style="position:absolute; right:0px; top:0px; font-size:2.5rem; opacity:0; transform: scale(0.5); transition: all 0.5s ease; z-index:15;">💻</div>
+                    </div>
+                </div>
+                
+                <!-- Controls and Log -->
+                <div style="display:flex; flex-direction:column; justify-content: flex-start; gap: 1rem;">
+                    <div class="controls">
+                        <button id="btn-visit-1" class="pixel-btn" style="min-width:180px;">Operator: Visit Shop</button>
+                        <button id="btn-maps" class="pixel-btn" disabled style="display:none; min-width:180px;">Operator: Google Maps</button>
+                        <button id="btn-visit-2" class="pixel-btn" disabled style="display:none; min-width:180px;">Operator: Visit Shop</button>
+                    </div>
+                    <div id="log-laptop" class="log-panel">
+                        <span style="color:var(--text-muted)">// Simulator Action Log</span><br>
+                        > Task Assigned: Buy Laptop
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===============================================
+             6. Section 6: Problem Decomposition (Naruto) 
+             =============================================== -->
+        <section id="decomposition">
+            <h2 style="color: var(--primary);">6. Problem Decomposition</h2>
+            <p>In complex problems, a massive goal is fractured into simpler, manageable sub-goals. If a tool cannot be used yet, the AI pauses, creates a sub-problem to fix the roadblock, and then merges the results back together.</p>
+            
+            <div id="naruto-arena" class="naruto-arena">
+                <span class="pixel-text clone-hint">CLICK CENTER TO DECOMPOSE</span>
+                
+                <img id="naruto-main" class="naruto-char" src="naruto.jpg" alt="Naruto (Main Goal)">
+                <img class="naruto-clone c1" src="naruto.jpg" alt="Shadow Clone (Sub-goal)">
+                <img class="naruto-clone c2" src="naruto.jpg" alt="Shadow Clone (Sub-goal)">
+                <img class="naruto-clone c3" src="naruto.jpg" alt="Shadow Clone (Sub-goal)">
+            </div>
+        </section>
+
+        <!-- ===============================================
+             7. Section 7: Exam Strategy & 3 PYQs 
+             =============================================== -->
+        <section id="pyqs">
+            <h2 style="color: var(--success);">7. Exam Strategy & 3 PYQs</h2>
+
+            <div class="pyq-list">
+                <!-- Card 1 -->
+                <div class="pyq-card">
+                    <div class="pyq-split">
+                        <div class="pyq-left">
+                            <div class="pyq-question-box" style="padding: 1.5rem; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; font-family: 'Times New Roman', serif; font-size: 1.3rem; letter-spacing: 0.5px; color: #ddd; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);">
+                                25. How the means-end analysis works? Discuss with an suitable example.
+                            </div>
+                        </div>
+                        <div class="pyq-right">
+                            <div style="text-align:right">
+                                <h3 class="pyq-year" style="font-size:1.8rem">Nov 06</h3>
+                                <p style="color:var(--text-muted); font-size:1.2rem; font-weight:800; margin:0">2024</p>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="pixel-btn reveal-btn" style="width: 100%; text-align:center" onclick="revealPYQ(this, 'pyq1-ans')">Apply Operator (Reveal Answer)</button>
+                    <div class="loading-wrap"><img src="thinking.gif" style="height: 40px;" alt="Loading"><span style="font-family: var(--font-pixel); color: var(--primary);">&gt; Computing State Matrix...</span></div>
+                    <div id="pyq1-ans" class="answer-reveal">
+                        <div style="color:inherit; margin:0; line-height: 1.6;">
+                            <strong style="font-size: 1.15rem; color: #34d399;">1. The MEA Process:</strong>
+                            <p style="margin-top:0.5rem; margin-bottom: 1rem; color: #a7f3d0; font-size: 0.95rem;">The MEA process centers around continuous evaluation and relies on the following 6 steps:</p>
+                            <ol style="margin-left: 1.5rem; margin-bottom: 1.5rem; color: #a7f3d0; font-size: 0.95rem;">
+                                <li style="margin-bottom:0.3rem">Compare the current state and the goal state.</li>
+                                <li style="margin-bottom:0.3rem">Identify the differences between them.</li>
+                                <li style="margin-bottom:0.3rem">Select an operator (action) to reduce the most significant difference.</li>
+                                <li style="margin-bottom:0.3rem"><strong>Precondition Check:</strong> If the chosen operator has preconditions that are not currently met, apply MEA recursively to achieve those preconditions first.</li>
+                                <li style="margin-bottom:0.3rem">Apply the operator to transition to the new state.</li>
+                                <li style="margin-bottom:0.3rem">Repeat until the goal is successfully reached.</li>
+                            </ol>
+                            
+                            <strong style="font-size: 1.15rem; color: #34d399;">2. Suitable Example (State Transformation):</strong>
+                            <p style="margin-top:0.5rem; margin-bottom: 0.5rem; color: #a7f3d0; font-size: 0.95rem;">Consider a visual AI transformation task:</p>
+                            <ul style="margin-left: 1.5rem; margin-bottom: 1.5rem; color: #a7f3d0; font-size: 0.95rem;">
+                                <li><strong>Initial State:</strong> A circle containing a square, plus a small dot on the outside.</li>
+                                <li><strong>Goal State:</strong> An empty circle with a diamond on the outside.</li>
+                                <li><strong>Operators Available:</strong> Move, Delete, Expand.</li>
+                            </ul>
+                            
+                            <strong style="font-size: 1.15rem; color: #34d399;">3. Step-by-Step Execution:</strong>
+                            <ul style="list-style-type: none; margin-left: 0; margin-top: 0.5rem; color: #a7f3d0; font-size: 0.95rem;">
+                                <li style="margin-bottom:0.5rem"><strong>Step 1:</strong> The AI evaluates the initial state and identifies the first difference (the extra dot). It applies the <em>Delete</em> operator.</li>
+                                <li style="margin-bottom:0.5rem"><strong>Step 2:</strong> The AI evaluates the new state. The square is inside the circle, but it needs to be outside. It applies the <em>Move</em> operator.</li>
+                                <li style="margin-bottom:0.5rem"><strong>Step 3:</strong> The AI evaluates the new state. The shape is currently a square, but the goal requires a diamond. It applies the <em>Expand</em> operator to transform the shape, successfully reaching the Goal State.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="pyq-card">
+                    <div class="pyq-split">
+                        <div class="pyq-left">
+                            <div class="pyq-question-box" style="padding: 1.5rem; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; font-family: 'Times New Roman', serif; font-size: 1.3rem; letter-spacing: 0.5px; color: #ddd; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);">
+                                25. a. Explain the Mean Ends analysis with an example.
+                            </div>
+                        </div>
+                        <div class="pyq-right">
+                            <div style="text-align:right">
+                                <h3 class="pyq-year" style="font-size:1.8rem">Jul 13</h3>
+                                <p style="color:var(--text-muted); font-size:1.2rem; font-weight:800; margin:0">2023</p>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="pixel-btn reveal-btn" style="width: 100%; text-align:center" onclick="revealPYQ(this, 'pyq2-ans')">Apply Operator (Reveal Answer)</button>
+                    <div class="loading-wrap"><img src="thinking.gif" style="height: 40px;" alt="Loading"><span style="font-family: var(--font-pixel); color: var(--primary);">&gt; Computing State Matrix...</span></div>
+                    <div id="pyq2-ans" class="answer-reveal">
+                        <div style="color:inherit; margin:0; line-height: 1.6;">
+                            <strong style="font-size: 1.15rem; color: #34d399;">1. What is Means-Ends Analysis?</strong>
+                            <p style="margin-top:0.5rem; margin-bottom: 1.5rem; color: #a7f3d0; font-size: 0.95rem;">
+                                Means-Ends Analysis (MEA) is a problem-solving technique that focuses on reducing the difference between the current state and the goal state. Instead of searching through all possible actions, MEA selects specific actions (operators) that appear to bring the agent closer to the goal. It utilizes a mixed strategy of both forward and backward reasoning to solve major parts of a problem first.
+                            </p>
+
+                            <strong style="font-size: 1.15rem; color: #34d399;">2. The MEA Steps:</strong>
+                            <ol style="margin-left: 1.5rem; margin-top: 0.5rem; margin-bottom: 1.5rem; color: #a7f3d0; font-size: 0.95rem;">
+                                <li style="margin-bottom:0.3rem">Compare current state and goal state.</li>
+                                <li style="margin-bottom:0.3rem">Identify differences.</li>
+                                <li style="margin-bottom:0.3rem">Select an operator (action) to reduce the most significant difference.</li>
+                                <li style="margin-bottom:0.3rem">If the operator has preconditions, apply MEA recursively to achieve those first.</li>
+                                <li style="margin-bottom:0.3rem">Apply the operator to transition to the new state.</li>
+                                <li style="margin-bottom:0.3rem">Repeat until the goal is reached.</li>
+                            </ol>
+
+                            <strong style="font-size: 1.15rem; color: #34d399;">3. Example: The Block World Problem</strong>
+                            <p style="margin-top:0.5rem; margin-bottom: 0.5rem; color: #a7f3d0; font-size: 0.95rem;">The Block World is a classical AI planning problem used in robotics.</p>
+                            <ul style="margin-left: 1.5rem; margin-bottom: 1.5rem; color: #a7f3d0; font-size: 0.95rem;">
+                                <li><strong>Start State:</strong> Block A is on the table, and Block B is on the table. The robotic arm is empty.</li>
+                                <li><strong>Goal State:</strong> Block A needs to be stacked on top of Block B (On(A, B)).</li>
+                            </ul>
+
+                            <strong style="font-size: 1.15rem; color: #34d399;">4. MEA Execution:</strong>
+                            <ul style="list-style-type: none; margin-left: 0; margin-top: 0.5rem; color: #a7f3d0; font-size: 0.95rem;">
+                                <li style="margin-bottom:0.5rem"><strong>Step 1 (Difference):</strong> The AI sees Block A is not on Block B.</li>
+                                <li style="margin-bottom:0.5rem"><strong>Step 2 (Operator Selection):</strong> It selects the operator Stack(A, B).</li>
+                                <li style="margin-bottom:0.5rem"><strong>Step 3 (Precondition Check):</strong> To use Stack(A,B), the preconditions are Holding(A) and Clear(B). The AI is not currently holding A, so the precondition fails.</li>
+                                <li style="margin-bottom:0.5rem"><strong>Step 4 (Recursive Sub-Goal):</strong> The AI creates a sub-goal to achieve Holding(A) by selecting the Pickup(A) operator.</li>
+                                <li style="margin-bottom:0.5rem"><strong>Step 5 (Check & Execute):</strong> The preconditions for Pickup(A) are Arm Empty, On(A, Table), and Clear(A). Since these are met in the Start State, the AI successfully executes Pickup(A), and then immediately executes Stack(A, B) to reach the goal.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 3 -->
+                <div class="pyq-card">
+                    <div class="pyq-split">
+                        <div class="pyq-left">
+                            <div class="pyq-question-box" style="padding: 1.5rem; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; font-family: 'Times New Roman', serif; font-size: 1.3rem; letter-spacing: 0.5px; color: #ddd; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);">
+                                25. a. Describe how mean ends analysis can be applied to solve complex scenarios in the blocks world.
+                            </div>
+                        </div>
+                        <div class="pyq-right">
+                            <div style="text-align:right">
+                                <h3 class="pyq-year" style="font-size:1.8rem">May 14</h3>
+                                <p style="color:var(--text-muted); font-size:1.2rem; font-weight:800; margin:0">2024</p>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="pixel-btn reveal-btn" style="width: 100%; text-align:center" onclick="revealPYQ(this, 'pyq3-ans')">Apply Operator (Reveal Answer)</button>
+                    <div class="loading-wrap"><img src="thinking.gif" style="height: 40px;" alt="Loading"><span style="font-family: var(--font-pixel); color: var(--primary);">&gt; Computing State Matrix...</span></div>
+                    <div id="pyq3-ans" class="answer-reveal">
+                        <div style="color:inherit; margin:0; line-height: 1.6;">
+                            <strong style="font-size: 1.15rem; color: #34d399;">1. Introduction to Blocks World:</strong>
+                            <p style="margin-top:0.5rem; margin-bottom: 1.5rem; color: #a7f3d0; font-size: 0.95rem;">
+                                The "Blocks World" is a classic AI problem where a robotic arm must rearrange blocks on a table to match a specific goal shape. Means-Ends Analysis (MEA) solves this by constantly looking at the difference between the "Current State" and the "Goal State" and picking an action to fix it.
+                            </p>
+
+                            <strong style="font-size: 1.15rem; color: #34d399;">2. The Rules (States & Operators):</strong>
+                            <p style="margin-top:0.5rem; margin-bottom: 1.5rem; color: #a7f3d0; font-size: 0.95rem;">
+                                To solve the problem, the AI uses four specific actions (Operators): <span style="font-weight: 800; color: #fff;">Pickup, Putdown, Stack, and Unstack.</span><br><br>
+                                However, every action has strict <strong>Pre-conditions</strong> (rules that must be true first). For example, the robot arm cannot pick up a block if another block is sitting on top of it (the block must be "Clear").
+                            </p>
+
+                            <strong style="font-size: 1.15rem; color: #34d399;">3. How MEA Solves it (Easy Example):</strong>
+                            <p style="margin-top:0.5rem; margin-bottom: 0.5rem; color: #a7f3d0; font-size: 0.95rem;">
+                                Imagine Block A and Block B are sitting separately on the table, and the Goal is to stack A on top of B.
+                            </p>
+                            <ul style="list-style-type: none; margin-left: 0; margin-top: 0.5rem; color: #a7f3d0; font-size: 0.95rem;">
+                                <li style="margin-bottom:0.5rem"><strong>Step 1:</strong> The AI sees the difference and decides to use the <em>Stack(A, B)</em> action.</li>
+                                <li style="margin-bottom:0.5rem"><strong>Step 2 (The Roadblock):</strong> To stack A, the precondition says the arm must be holding Block A. But the arm is currently empty, so the action is blocked.</li>
+                                <li style="margin-bottom:0.5rem"><strong>Step 3 (Sub-Goal):</strong> MEA pauses the main goal and creates a smaller sub-goal: Get Block A into the arm.</li>
+                                <li style="margin-bottom:0.5rem"><strong>Step 4 (Resolution):</strong> The AI selects the <em>Pickup(A)</em> action. Since A is clear on the table, this works!</li>
+                                <li style="margin-bottom:0.5rem"><strong>Step 5:</strong> Now that the arm is holding A, the original precondition is met. The AI successfully executes <em>Stack(A, B)</em> and reaches the goal.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Conclusion -->
+        <section style="border-bottom:none; padding-bottom: 6rem;">
+            <div class="showdown-panel">
+                <div>
+                    <h3 style="color: var(--primary);">MEA</h3>
+                    <p>MEA is much simpler: it just looks at the biggest obstacle in front of it and picks a tool to smash it. It doesn't care about the perfect path, only about reducing the immediate difference.</p>
+                </div>
+                <div class="vs">VS</div>
+                <div>
+                    <h3 style="color: var(--secondary);">A* Search</h3>
+                    <p>A* Search calculates the exact mathematical cost of every single step to find the absolute shortest path.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // Progress Tracker
+        window.addEventListener('scroll', () => {
+            const chaseGroup = document.getElementById('scroll-chase-group');
+            const scrollTop = window.scrollY || document.documentElement.scrollTop;
+            const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            
+            let scrollPercent = scrollTop / scrollHeight;
+            if (scrollPercent < 0) scrollPercent = 0;
+            if (scrollPercent > 1) scrollPercent = 1;
+            
+            const containerWidth = chaseGroup.clientWidth;
+            chaseGroup.style.left = `calc(${scrollPercent * 100}% - ${scrollPercent * containerWidth}px)`;
+        });
+
+        // Interactive Simulator
+        const btnDelete = document.getElementById('btn-delete');
+        const btnMove = document.getElementById('btn-move');
+        const btnExpand = document.getElementById('btn-expand');
+        
+        const simDot = document.getElementById('sim-dot');
+        const simDiamond = document.getElementById('sim-diamond');
+        const logPanel = document.getElementById('action-log');
+
+        let simStep = 0;
+
+        btnDelete.addEventListener('click', () => {
+            if(simStep === 0) {
+                simDot.style.opacity = '0';
+                setTimeout(() => simDot.style.display = 'none', 300);
+                
+                logPanel.innerHTML = "<span style='color:var(--danger)'>[Step 2: Applied Delete Operator]</span><br>> Effect Executed <code>DELETE</code><br>> Difference (Artifact Dot) resolved.";
+                
+                btnDelete.disabled = true;
+                btnMove.disabled = false;
+                simStep = 1;
+            }
+        });
+
+        btnMove.addEventListener('click', () => {
+            if(simStep === 1) {
+                simDiamond.classList.add('moved');
+                
+                // Extra animation adjustments to look like Goal state
+                simDiamond.style.top = '20px';
+                simDiamond.style.right = '20px';
+                
+                logPanel.innerHTML = "<span style='color:var(--primary)'>[Step 3: Applied Move Operator]</span><br>> Effect Executed <code>MOVE</code><br>> Object extracted from Containment.";
+                
+                btnMove.disabled = true;
+                btnExpand.disabled = false;
+                simStep = 2;
+            }
+        });
+
+        btnExpand.addEventListener('click', () => {
+            if(simStep === 2) {
+                simDiamond.classList.add('expanded');
+                // Ensure the expanded diamond intersects the top-right rim of the circle
+                simDiamond.style.top = '35px';
+                simDiamond.style.right = '35px';
+
+                logPanel.innerHTML = "<span style='color:var(--success); font-weight:bold'>[Step 4: Applied Expand Operator]</span><br>> Executed <code>EXPAND</code><br>> Goal Metric Achieved. Success Exit.";
+                
+                btnExpand.disabled = true;
+                simStep = 3;
+            }
+        });
+
+        // Naruto
+        const narutoArena = document.getElementById('naruto-arena');
+        const cloneHint = document.querySelector('.clone-hint');
+        narutoArena.addEventListener('click', () => {
+            narutoArena.classList.toggle('active');
+            if(narutoArena.classList.contains('active')) {
+                cloneHint.textContent = "SUB-GOALS CREATED";
+                cloneHint.style.color = "var(--success)";
+                cloneHint.style.animation = "none";
+            } else {
+                cloneHint.textContent = "CLICK CENTER TO DECOMPOSE";
+                cloneHint.style.color = "var(--text-muted)";
+                cloneHint.style.animation = "pulse 2s infinite";
+            }
+        });
+
+        // PYQs
+        function revealPYQ(btnElement, answerId) {
+            btnElement.style.display = 'none';
+            const loadContainer = btnElement.nextElementSibling;
+            const answerContainer = document.getElementById(answerId);
+            loadContainer.style.display = 'flex';
+            setTimeout(() => {
+                loadContainer.style.display = 'none';
+                answerContainer.style.display = 'block';
+            }, 1500);
+        }
+
+        // ------------------
+        // Blocks World Simulator
+        // ------------------
+        const btnStack1 = document.getElementById('btn-stack-1');
+        const btnPickup = document.getElementById('btn-pickup');
+        const btnStack2 = document.getElementById('btn-stack-2');
+        const simBlockA = document.getElementById('sim-block-a');
+        const simClaw = document.getElementById('sim-claw');
+        const logBlocks = document.getElementById('log-blocks');
+
+        btnStack1.addEventListener('click', () => {
+            logBlocks.innerHTML = "<span style='color:var(--danger)'>> Error: Pre-condition failed. Arm is not Holding(A). Recursive sub-goal required.</span>";
+            btnStack1.style.display = 'none';
+            btnPickup.style.display = 'inline-block';
+            btnPickup.disabled = false;
+        });
+
+        btnPickup.addEventListener('click', () => {
+            // Move claw to A, grab it, move up
+            simClaw.style.left = '32px'; // align with block A (left:30px)
+            setTimeout(() => {
+                simClaw.style.top = '10px';
+                simBlockA.style.bottom = '50px';
+            }, 400);
+
+            logBlocks.innerHTML = "<span style='color:var(--primary)'>> Pre-conditions met. Pickup(A) applied.</span>";
+            btnPickup.style.display = 'none';
+            btnStack2.style.display = 'inline-block';
+            btnStack2.disabled = false;
+        });
+
+        btnStack2.addEventListener('click', () => {
+            // Move claw + block to B
+            simClaw.style.left = '126px';
+            simBlockA.style.left = '124px'; // align with block B (right:30 => width 200 => left 200-30-46 = 124px)
+            
+            setTimeout(() => {
+                simBlockA.style.bottom = '46px'; // exactly on top of B (B height 46px)
+                simClaw.style.top = '5px'; // Move claw down a bit
+                setTimeout(() => {
+                    simClaw.style.top = '-50px'; // move claw up and away
+                    simClaw.style.opacity = '0'; // fade out the claw entirely so it's no longer touching
+                }, 400);
+            }, 600);
+            
+            logBlocks.innerHTML = "<span style='color:var(--success); font-weight:bold'>> Pre-conditions met. Stack(A,B) applied. Arm is now Empty. GOAL REACHED!</span>";
+            btnStack2.disabled = true;
+        });
+
+
+        // ------------------
+        // Laptop Purchase Simulator
+        // ------------------
+        const btnVisit1 = document.getElementById('btn-visit-1');
+        const btnMaps = document.getElementById('btn-maps');
+        const btnVisit2 = document.getElementById('btn-visit-2');
+        const simUser = document.getElementById('sim-user');
+        const simPhone = document.getElementById('sim-phone');
+        const simLaptop = document.getElementById('sim-laptop');
+        const logLaptop = document.getElementById('log-laptop');
+
+        btnVisit1.addEventListener('click', () => {
+            logLaptop.innerHTML = "<span style='color:var(--danger)'>> Error: Pre-condition failed. Shop address unknown. Sub-goal: Find Address.</span>";
+            btnVisit1.style.display = 'none';
+            btnMaps.style.display = 'inline-block';
+            btnMaps.disabled = false;
+        });
+
+        btnMaps.addEventListener('click', () => {
+            simPhone.style.opacity = '1';
+            simPhone.style.filter = 'drop-shadow(0 0 15px var(--primary))';
+            // slight animation on phone
+            simPhone.style.transform = 'translateY(-10px)';
+            
+            logLaptop.innerHTML = "<span style='color:var(--primary)'>> Address acquired. Pre-condition for Visit Shop satisfied. Enable Operator.</span>";
+            btnMaps.style.display = 'none';
+            btnVisit2.style.display = 'inline-block';
+            btnVisit2.disabled = false;
+        });
+
+        btnVisit2.addEventListener('click', () => {
+            simUser.style.left = '220px'; // move to shop
+            setTimeout(() => {
+                simLaptop.style.opacity = '1';
+                simLaptop.style.transform = 'translateY(-10px) scale(1.2)';
+            }, 1000);
+
+            logLaptop.innerHTML = "<span style='color:var(--success); font-weight:bold'>> Laptop purchased. GOAL REACHED!</span>";
+            btnVisit2.disabled = true;
+        });
+    </script>
+</body>
+</html>
